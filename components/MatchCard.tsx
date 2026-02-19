@@ -1,13 +1,17 @@
+"use client";
+
 import { Match } from "@/types";
 import Image from "next/image";
+import { useLang } from "@/lib/i18n";
 
 interface MatchCardProps {
   match: Match;
 }
 
 export default function MatchCard({ match }: MatchCardProps) {
+  const { lang } = useLang();
   const date = new Date(match.date);
-  const formattedDate = date.toLocaleDateString("tr-TR", {
+  const formattedDate = date.toLocaleDateString(lang === "tr" ? "tr-TR" : "en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",

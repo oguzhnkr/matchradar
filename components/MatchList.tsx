@@ -2,6 +2,7 @@
 
 import { Match } from "@/types";
 import MatchCard from "./MatchCard";
+import { useLang } from "@/lib/i18n";
 
 interface MatchListProps {
   matches: Match[];
@@ -22,6 +23,8 @@ export default function MatchList({
   team1Name,
   team2Name,
 }: MatchListProps) {
+  const { lang, t } = useLang();
+
   if (loading) {
     return (
       <div className="mt-8 space-y-4">
@@ -46,7 +49,7 @@ export default function MatchList({
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
               />
             </svg>
-            Maçlar yükleniyor...
+            {t.loadingMatches}
           </div>
         </div>
         {[...Array(3)].map((_, i) => (
@@ -87,22 +90,22 @@ export default function MatchList({
         {/* Summary */}
         <div className="bg-surface border border-surface-lighter rounded-xl p-6 mb-6">
           <h2 className="text-center text-sm font-medium text-gray-400 mb-4">
-            {team1Name} - Son {matches.length} Maç
+            {team1Name} - {t.last} {matches.length} {t.matches}
           </h2>
           <div className="flex items-center justify-center gap-8">
             <div className="text-center">
               <div className="text-2xl font-bold text-accent">{wins}</div>
-              <div className="text-xs text-gray-500 mt-1">Galibiyet</div>
+              <div className="text-xs text-gray-500 mt-1">{t.win}</div>
               <div className="text-xs text-accent/70 mt-0.5">%{matches.length ? Math.round((wins / matches.length) * 100) : 0}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400">{draws}</div>
-              <div className="text-xs text-gray-500 mt-1">Beraberlik</div>
+              <div className="text-xs text-gray-500 mt-1">{t.draw}</div>
               <div className="text-xs text-yellow-400/70 mt-0.5">%{matches.length ? Math.round((draws / matches.length) * 100) : 0}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400">{losses}</div>
-              <div className="text-xs text-gray-500 mt-1">Mağlubiyet</div>
+              <div className="text-xs text-gray-500 mt-1">{t.loss}</div>
               <div className="text-xs text-red-400/70 mt-0.5">%{matches.length ? Math.round((losses / matches.length) * 100) : 0}</div>
             </div>
           </div>
@@ -144,7 +147,7 @@ export default function MatchList({
       {/* Summary */}
       <div className="bg-surface border border-surface-lighter rounded-xl p-6 mb-6">
         <h2 className="text-center text-sm font-medium text-gray-400 mb-4">
-          Son {matches.length} Maç
+          {t.last} {matches.length} {t.matches}
         </h2>
         <div className="flex items-center justify-center gap-6">
           <div className="text-center">
@@ -156,7 +159,7 @@ export default function MatchList({
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-400">{draws}</div>
-            <div className="text-xs text-gray-500 mt-1">Beraberlik</div>
+            <div className="text-xs text-gray-500 mt-1">{t.draw}</div>
             <div className="text-xs text-yellow-400/70 mt-0.5">%{matches.length ? Math.round((draws / matches.length) * 100) : 0}</div>
           </div>
           <div className="text-center">

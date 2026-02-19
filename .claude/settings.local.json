@@ -5,7 +5,17 @@
       "Bash(start:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:matchradar.io)",
+      "Bash(bunx wrangler d1 create:*)",
+      "Bash(bunx wrangler deploy:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(bunx wrangler versions list:*)",
+      "Bash(bunx wrangler versions deploy:*)",
+      "WebFetch(domain:matchradar.pages.dev)",
+      "WebFetch(domain:matchradar.oguzhnkr.workers.dev)",
+      "Bash(bunx next build:*)"
     ]
   }
 }

@@ -6,11 +6,13 @@ import Header from "@/components/Header";
 import LeagueSelector from "@/components/LeagueSelector";
 import TeamSelector from "@/components/TeamSelector";
 import MatchList from "@/components/MatchList";
+import { useLang, LangProvider } from "@/lib/i18n";
 
 type Mode = "h2h" | "single";
 type VenueFilter = "all" | "home" | "away";
 
-export default function Home() {
+function HomeContent() {
+  const { t } = useLang();
   const [mode, setMode] = useState<Mode>("h2h");
   const [venueFilter, setVenueFilter] = useState<VenueFilter>("all");
 
@@ -34,6 +36,10 @@ export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Track team names for display (needed when team selected via search without league)
+  const [teamAName, setTeamAName] = useState("");
+  const [teamBName, setTeamBName] = useState("");
 
   // Clear matches on mode switch
   const switchMode = (newMode: Mode) => {
@@ -91,6 +97,21 @@ export default function Home() {
     }
   }, []);
 
+  // Clear league and enable search mode
+  const clearLeagueA = useCallback(() => {
+    setLeagueA(null);
+    setTeamsA([]);
+    setTeamA(null);
+    setMatches([]);
+  }, []);
+
+  const clearLeagueB = useCallback(() => {
+    setLeagueB(null);
+    setTeamsB([]);
+    setTeamB(null);
+    setMatches([]);
+  }, []);
+
   // Fetch H2H matches
   const fetchH2H = useCallback(async () => {
     if (!teamA || !teamB) return;
@@ -137,14 +158,15 @@ export default function Home() {
       })
     : matches;
 
-  const teamAName =
+  // Resolve team names from available data
+  const resolvedTeamAName =
     teamsA.find((t) => t.id === teamA)?.name ||
     teamsB.find((t) => t.id === teamA)?.name ||
-    "";
-  const teamBName =
+    teamAName;
+  const resolvedTeamBName =
     teamsB.find((t) => t.id === teamB)?.name ||
     teamsA.find((t) => t.id === teamB)?.name ||
-    "";
+    teamBName;
 
   return (
     <main className="min-h-screen">
@@ -162,7 +184,7 @@ export default function Home() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              H2H Karşılaştırma
+              {t.h2hTab}
             </button>
             <button
               onClick={() => switchMode("single")}
@@ -172,7 +194,7 @@ export default function Home() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              Tek Takım
+              {t.singleTab}
             </button>
           </div>
         </div>
@@ -184,46 +206,50 @@ export default function Home() {
               {/* Team A */}
               <div className="bg-surface border border-surface-lighter rounded-xl p-4 sm:p-5 space-y-3 sm:space-y-4">
                 <h3 className="text-xs sm:text-sm font-semibold text-accent uppercase tracking-wider">
-                  Takım A
+                  {t.teamA}
                 </h3>
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueA}
                   onSelect={fetchTeamsA}
+                  onClear={clearLeagueA}
                   loading={leaguesLoading}
                 />
                 <TeamSelector
                   teams={teamsA}
                   selectedTeam={teamA}
-                  onSelect={(id) => {
+                  onSelect={(id, team) => {
                     setTeamA(id);
+                    setTeamAName(team.name);
                     setMatches([]);
                   }}
                   loading={teamsALoading}
-                  disabled={!leagueA}
+                  hasLeague={!!leagueA}
                 />
               </div>
 
               {/* Team B */}
               <div className="bg-surface border border-surface-lighter rounded-xl p-4 sm:p-5 space-y-3 sm:space-y-4">
                 <h3 className="text-xs sm:text-sm font-semibold text-accent uppercase tracking-wider">
-                  Takım B
+                  {t.teamB}
                 </h3>
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueB}
                   onSelect={fetchTeamsB}
+                  onClear={clearLeagueB}
                   loading={leaguesLoading}
                 />
                 <TeamSelector
                   teams={teamsB}
                   selectedTeam={teamB}
-                  onSelect={(id) => {
+                  onSelect={(id, team) => {
                     setTeamB(id);
+                    setTeamBName(team.name);
                     setMatches([]);
                   }}
                   loading={teamsBLoading}
-                  disabled={!leagueB}
+                  hasLeague={!!leagueB}
                 />
               </div>
             </div>
@@ -241,20 +267,20 @@ export default function Home() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Yükleniyor...
+                    {t.loading}
                   </>
                 ) : (
                   <>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    Karşılaştır
+                    {t.compare}
                   </>
                 )}
               </button>
               {teamA && teamB && teamA === teamB && (
                 <p className="text-xs text-red-400 mt-2">
-                  Lütfen farklı iki takım seçin.
+                  {t.selectTwoDifferent}
                 </p>
               )}
             </div>
@@ -265,23 +291,25 @@ export default function Home() {
             <div className="max-w-md mx-auto">
               <div className="bg-surface border border-surface-lighter rounded-xl p-4 sm:p-5 space-y-3 sm:space-y-4">
                 <h3 className="text-xs sm:text-sm font-semibold text-accent uppercase tracking-wider">
-                  Takım Seç
+                  {t.selectTeam}
                 </h3>
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueA}
                   onSelect={fetchTeamsA}
+                  onClear={clearLeagueA}
                   loading={leaguesLoading}
                 />
                 <TeamSelector
                   teams={teamsA}
                   selectedTeam={teamA}
-                  onSelect={(id) => {
+                  onSelect={(id, team) => {
                     setTeamA(id);
+                    setTeamAName(team.name);
                     setMatches([]);
                   }}
                   loading={teamsALoading}
-                  disabled={!leagueA}
+                  hasLeague={!!leagueA}
                 />
               </div>
             </div>
@@ -290,7 +318,7 @@ export default function Home() {
             {matches.length > 0 && (
               <div className="flex justify-center mt-3 sm:mt-4">
                 <div className="bg-surface border border-surface-lighter rounded-lg p-1 inline-flex">
-                  {([["all", "Tümü"], ["home", "İç Saha"], ["away", "Deplasman"]] as const).map(([value, label]) => (
+                  {([["all", t.all], ["home", t.home], ["away", t.away]] as [VenueFilter, string][]).map(([value, label]) => (
                     <button
                       key={value}
                       onClick={() => setVenueFilter(value)}
@@ -320,14 +348,14 @@ export default function Home() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Yükleniyor...
+                    {t.loading}
                   </>
                 ) : (
                   <>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    Maçları Getir
+                    {t.fetchMatches}
                   </>
                 )}
               </button>
@@ -343,7 +371,7 @@ export default function Home() {
               onClick={() => setError(null)}
               className="mt-2 text-xs text-red-500 hover:text-red-300 underline"
             >
-              Kapat
+              {t.close}
             </button>
           </div>
         )}
@@ -355,8 +383,8 @@ export default function Home() {
           mode={mode}
           team1Id={teamA || 0}
           team2Id={teamB || 0}
-          team1Name={teamAName}
-          team2Name={mode === "single" ? "" : teamBName}
+          team1Name={resolvedTeamAName}
+          team2Name={mode === "single" ? "" : resolvedTeamBName}
         />
 
         {/* Empty state */}
@@ -376,13 +404,19 @@ export default function Home() {
               />
             </svg>
             <p className="text-sm">
-              {mode === "h2h"
-                ? "İki takım seçin ve karşılaştırma yapın"
-                : "Bir takım seçin ve maçlarını görüntüleyin"}
+              {mode === "h2h" ? t.h2hEmpty : t.singleEmpty}
             </p>
           </div>
         )}
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <LangProvider>
+      <HomeContent />
+    </LangProvider>
   );
 }

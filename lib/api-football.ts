@@ -70,6 +70,20 @@ export async function getTeams(leagueId: number, season: number) {
     .sort((a: any, b: any) => a.name.localeCompare(b.name));
 }
 
+export async function searchTeams(query: string) {
+  const data = await apiFetch("/teams", {
+    search: query,
+  });
+
+  return data.response
+    .map((item: any) => ({
+      id: item.team.id,
+      name: item.team.name,
+      logo: item.team.logo,
+    }))
+    .sort((a: any, b: any) => a.name.localeCompare(b.name));
+}
+
 export async function getTeamMatches(teamId: number) {
   const data = await apiFetch("/fixtures", {
     team: String(teamId),
