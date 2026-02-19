@@ -93,14 +93,17 @@ export default function MatchList({
             <div className="text-center">
               <div className="text-2xl font-bold text-accent">{wins}</div>
               <div className="text-xs text-gray-500 mt-1">Galibiyet</div>
+              <div className="text-xs text-accent/70 mt-0.5">%{matches.length ? Math.round((wins / matches.length) * 100) : 0}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400">{draws}</div>
               <div className="text-xs text-gray-500 mt-1">Beraberlik</div>
+              <div className="text-xs text-yellow-400/70 mt-0.5">%{matches.length ? Math.round((draws / matches.length) * 100) : 0}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400">{losses}</div>
               <div className="text-xs text-gray-500 mt-1">Mağlubiyet</div>
+              <div className="text-xs text-red-400/70 mt-0.5">%{matches.length ? Math.round((losses / matches.length) * 100) : 0}</div>
             </div>
           </div>
         </div>
@@ -149,16 +152,19 @@ export default function MatchList({
             <div className="text-xs text-gray-500 mt-1 truncate max-w-24">
               {team1Name}
             </div>
+            <div className="text-xs text-accent/70 mt-0.5">%{matches.length ? Math.round((team1Wins / matches.length) * 100) : 0}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-400">{draws}</div>
             <div className="text-xs text-gray-500 mt-1">Beraberlik</div>
+            <div className="text-xs text-yellow-400/70 mt-0.5">%{matches.length ? Math.round((draws / matches.length) * 100) : 0}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-accent">{team2Wins}</div>
             <div className="text-xs text-gray-500 mt-1 truncate max-w-24">
               {team2Name}
             </div>
+            <div className="text-xs text-accent/70 mt-0.5">%{matches.length ? Math.round((team2Wins / matches.length) * 100) : 0}</div>
           </div>
         </div>
       </div>
