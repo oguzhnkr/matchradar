@@ -8,9 +8,11 @@ import TeamSelector from "@/components/TeamSelector";
 import MatchList from "@/components/MatchList";
 
 type Mode = "h2h" | "single";
+type VenueFilter = "all" | "home" | "away";
 
 export default function Home() {
   const [mode, setMode] = useState<Mode>("h2h");
+  const [venueFilter, setVenueFilter] = useState<VenueFilter>("all");
 
   // Leagues
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -38,6 +40,7 @@ export default function Home() {
     setMode(newMode);
     setMatches([]);
     setError(null);
+    setVenueFilter("all");
   };
 
   // Fetch leagues on mount
@@ -124,6 +127,15 @@ export default function Home() {
 
   const canCompare = teamA !== null && teamB !== null && teamA !== teamB;
   const canFetchSingle = teamA !== null;
+
+  // Filter matches by venue for single team mode
+  const filteredMatches = mode === "single" && teamA
+    ? matches.filter((m) => {
+        if (venueFilter === "home") return m.home.id === teamA;
+        if (venueFilter === "away") return m.away.id === teamA;
+        return true;
+      })
+    : matches;
 
   const teamAName =
     teamsA.find((t) => t.id === teamA)?.name ||
@@ -274,6 +286,27 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Venue Filter */}
+            {matches.length > 0 && (
+              <div className="flex justify-center mt-3 sm:mt-4">
+                <div className="bg-surface border border-surface-lighter rounded-lg p-1 inline-flex">
+                  {([["all", "Tümü"], ["home", "İç Saha"], ["away", "Deplasman"]] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      onClick={() => setVenueFilter(value)}
+                      className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all ${
+                        venueFilter === value
+                          ? "bg-accent text-white"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Fetch Button */}
             <div className="mt-4 sm:mt-6 text-center">
               <button
@@ -317,7 +350,7 @@ export default function Home() {
 
         {/* Match Results */}
         <MatchList
-          matches={matches}
+          matches={filteredMatches}
           loading={matchesLoading}
           mode={mode}
           team1Id={teamA || 0}
@@ -327,7 +360,7 @@ export default function Home() {
         />
 
         {/* Empty state */}
-        {!matchesLoading && matches.length === 0 && !error && (
+        {!matchesLoading && filteredMatches.length === 0 && !error && (
           <div className="mt-12 text-center text-gray-600">
             <svg
               className="w-16 h-16 mx-auto mb-4 opacity-30"
