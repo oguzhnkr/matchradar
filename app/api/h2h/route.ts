@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getHeadToHead } from "@/lib/api-football";
 import { generateDemoH2H } from "@/lib/demo-data";
 
+export const runtime = "edge";
+
 const NO_CACHE = { "Cache-Control": "no-store, no-cache, must-revalidate" };
 
 export async function GET(request: NextRequest) {

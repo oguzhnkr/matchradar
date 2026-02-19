@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTeams, getAllTeams } from "@/lib/api-football";
 import { DEMO_TEAMS, getAllDemoTeams } from "@/lib/demo-data";
 
+export const runtime = "edge";
+
 const NO_CACHE = { "Cache-Control": "no-store, no-cache, must-revalidate" };
 
 export async function GET(request: NextRequest) {

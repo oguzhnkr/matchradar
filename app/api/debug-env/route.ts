@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 export async function GET() {
   const hasKey = !!process.env.API_FOOTBALL_KEY;
   const host = process.env.API_FOOTBALL_HOST || null;
