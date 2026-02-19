@@ -5,7 +5,7 @@ import { getLeagues } from "@/lib/api-football";
 import { DEMO_LEAGUES } from "@/lib/demo-data";
 
 export async function GET() {
-  if (process.env.DEMO_MODE === "true") {
+  if (process.env.DEMO_MODE === "true" || !process.env.RAPIDAPI_KEY) {
     return NextResponse.json(DEMO_LEAGUES);
   }
 

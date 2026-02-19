@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (process.env.DEMO_MODE === "true") {
+  if (process.env.DEMO_MODE === "true" || !process.env.RAPIDAPI_KEY) {
     const matches = generateDemoH2H(Number(team1), Number(team2));
     return NextResponse.json(matches);
   }

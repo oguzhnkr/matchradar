@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (process.env.DEMO_MODE === "true") {
+  if (process.env.DEMO_MODE === "true" || !process.env.RAPIDAPI_KEY) {
     const teams = DEMO_TEAMS[Number(league)] || [];
     return NextResponse.json(teams);
   }
