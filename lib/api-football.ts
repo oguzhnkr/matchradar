@@ -26,7 +26,6 @@ async function apiFetch(endpoint: string, params: Record<string, string> = {}) {
       "x-rapidapi-key": apiKey,
       "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
     },
-    next: { revalidate: 3600 },
   });
 
   if (res.status === 429) {
