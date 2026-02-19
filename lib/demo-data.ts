@@ -2,6 +2,7 @@ import { League, Team, Match } from "@/types";
 
 export const DEMO_LEAGUES: League[] = [
   { id: 203, name: "Süper Lig", country: "Turkey", logo: "https://media.api-sports.io/football/leagues/203.png", flag: "" },
+  { id: 204, name: "TFF 1. Lig", country: "Turkey", logo: "https://media.api-sports.io/football/leagues/204.png", flag: "" },
   { id: 39, name: "Premier League", country: "England", logo: "https://media.api-sports.io/football/leagues/39.png", flag: "" },
   { id: 140, name: "La Liga", country: "Spain", logo: "https://media.api-sports.io/football/leagues/140.png", flag: "" },
   { id: 135, name: "Serie A", country: "Italy", logo: "https://media.api-sports.io/football/leagues/135.png", flag: "" },
@@ -33,6 +34,27 @@ export const DEMO_TEAMS: Record<number, Team[]> = {
     { id: 3567, name: "Rizespor", logo: "https://media.api-sports.io/football/teams/3567.png" },
     { id: 3566, name: "Bodrum FK", logo: "https://media.api-sports.io/football/teams/3566.png" },
     { id: 3605, name: "Eyüpspor", logo: "https://media.api-sports.io/football/teams/3605.png" },
+  ],
+  // TFF 1. Lig (18 takım)
+  204: [
+    { id: 3577, name: "Gençlerbirliği", logo: "https://media.api-sports.io/football/teams/3577.png" },
+    { id: 3588, name: "Kocaelispor", logo: "https://media.api-sports.io/football/teams/3588.png" },
+    { id: 3572, name: "Ankaragücü", logo: "https://media.api-sports.io/football/teams/3572.png" },
+    { id: 3571, name: "Göztepe", logo: "https://media.api-sports.io/football/teams/3571.png" },
+    { id: 3586, name: "Sakaryaspor", logo: "https://media.api-sports.io/football/teams/3586.png" },
+    { id: 3580, name: "Boluspor", logo: "https://media.api-sports.io/football/teams/3580.png" },
+    { id: 3592, name: "Bandırmaspor", logo: "https://media.api-sports.io/football/teams/3592.png" },
+    { id: 3594, name: "Ümraniyespor", logo: "https://media.api-sports.io/football/teams/3594.png" },
+    { id: 3593, name: "Manisa FK", logo: "https://media.api-sports.io/football/teams/3593.png" },
+    { id: 3578, name: "Altay", logo: "https://media.api-sports.io/football/teams/3578.png" },
+    { id: 3582, name: "Erzurumspor", logo: "https://media.api-sports.io/football/teams/3582.png" },
+    { id: 3595, name: "Keçiörengücü", logo: "https://media.api-sports.io/football/teams/3595.png" },
+    { id: 3597, name: "Çorum FK", logo: "https://media.api-sports.io/football/teams/3597.png" },
+    { id: 3596, name: "Tuzlaspor", logo: "https://media.api-sports.io/football/teams/3596.png" },
+    { id: 3576, name: "Adanaspor", logo: "https://media.api-sports.io/football/teams/3576.png" },
+    { id: 3568, name: "Giresunspor", logo: "https://media.api-sports.io/football/teams/3568.png" },
+    { id: 3598, name: "Şanlıurfaspor", logo: "https://media.api-sports.io/football/teams/3598.png" },
+    { id: 3590, name: "Yeni Malatyaspor", logo: "https://media.api-sports.io/football/teams/3590.png" },
   ],
   // Premier League (20 takım)
   39: [
@@ -266,6 +288,21 @@ export function generateDemoTeamMatches(teamId: number): Match[] {
   }
 
   return matches;
+}
+
+// All demo teams combined, deduplicated by id
+export function getAllDemoTeams(): Team[] {
+  const seen = new Set<number>();
+  const all: Team[] = [];
+  for (const teams of Object.values(DEMO_TEAMS)) {
+    for (const t of teams) {
+      if (!seen.has(t.id)) {
+        seen.add(t.id);
+        all.push(t);
+      }
+    }
+  }
+  return all.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // Generate realistic H2H demo matches between any two teams

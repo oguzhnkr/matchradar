@@ -32,12 +32,7 @@ export default function LeagueSelector({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-gray-400">{t.league}</label>
-        {!selectedLeague && onClear && (
-          <span className="text-xs text-gray-600">{t.orSearchDirectly}</span>
-        )}
-      </div>
+      <label className="block text-sm font-medium text-gray-400">{t.league}</label>
       <div className="relative">
         <select
           value={selectedLeague ?? ""}

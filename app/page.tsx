@@ -20,26 +20,26 @@ function HomeContent() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leaguesLoading, setLeaguesLoading] = useState(true);
 
+  // All teams (loaded once on mount)
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [allTeamsLoading, setAllTeamsLoading] = useState(true);
+
   // Team A
   const [leagueA, setLeagueA] = useState<number | null>(null);
-  const [teamsA, setTeamsA] = useState<Team[]>([]);
-  const [teamsALoading, setTeamsALoading] = useState(false);
+  const [leagueTeamsA, setLeagueTeamsA] = useState<Team[]>([]);
+  const [leagueTeamsALoading, setLeagueTeamsALoading] = useState(false);
   const [teamA, setTeamA] = useState<number | null>(null);
 
   // Team B
   const [leagueB, setLeagueB] = useState<number | null>(null);
-  const [teamsB, setTeamsB] = useState<Team[]>([]);
-  const [teamsBLoading, setTeamsBLoading] = useState(false);
+  const [leagueTeamsB, setLeagueTeamsB] = useState<Team[]>([]);
+  const [leagueTeamsBLoading, setLeagueTeamsBLoading] = useState(false);
   const [teamB, setTeamB] = useState<number | null>(null);
 
   // Matches
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Track team names for display (needed when team selected via search without league)
-  const [teamAName, setTeamAName] = useState("");
-  const [teamBName, setTeamBName] = useState("");
 
   // Clear matches on mode switch
   const switchMode = (newMode: Mode) => {
@@ -49,7 +49,7 @@ function HomeContent() {
     setVenueFilter("all");
   };
 
-  // Fetch leagues on mount
+  // Fetch leagues + all teams on mount
   useEffect(() => {
     fetch("/api/leagues")
       .then((res) => res.json())
@@ -59,58 +59,73 @@ function HomeContent() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLeaguesLoading(false));
+
+    fetch("/api/teams")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.error && !json.data) throw new Error(json.error);
+        setAllTeams(json.data ?? json);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setAllTeamsLoading(false));
   }, []);
 
-  // Fetch teams when league A changes
-  const fetchTeamsA = useCallback(async (leagueId: number) => {
+  // Fetch league-specific teams when league A changes
+  const fetchLeagueTeamsA = useCallback(async (leagueId: number) => {
     setLeagueA(leagueId);
     setTeamA(null);
-    setTeamsALoading(true);
+    setLeagueTeamsALoading(true);
     setMatches([]);
     try {
       const res = await fetch(`/api/teams?league=${leagueId}`);
       const json = await res.json();
       if (json.error && !json.data) throw new Error(json.error);
-      setTeamsA(json.data ?? json);
+      setLeagueTeamsA(json.data ?? json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch teams");
     } finally {
-      setTeamsALoading(false);
+      setLeagueTeamsALoading(false);
     }
   }, []);
 
-  // Fetch teams when league B changes
-  const fetchTeamsB = useCallback(async (leagueId: number) => {
+  // Fetch league-specific teams when league B changes
+  const fetchLeagueTeamsB = useCallback(async (leagueId: number) => {
     setLeagueB(leagueId);
     setTeamB(null);
-    setTeamsBLoading(true);
+    setLeagueTeamsBLoading(true);
     setMatches([]);
     try {
       const res = await fetch(`/api/teams?league=${leagueId}`);
       const json = await res.json();
       if (json.error && !json.data) throw new Error(json.error);
-      setTeamsB(json.data ?? json);
+      setLeagueTeamsB(json.data ?? json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch teams");
     } finally {
-      setTeamsBLoading(false);
+      setLeagueTeamsBLoading(false);
     }
   }, []);
 
-  // Clear league and enable search mode
+  // Clear league → revert to allTeams
   const clearLeagueA = useCallback(() => {
     setLeagueA(null);
-    setTeamsA([]);
+    setLeagueTeamsA([]);
     setTeamA(null);
     setMatches([]);
   }, []);
 
   const clearLeagueB = useCallback(() => {
     setLeagueB(null);
-    setTeamsB([]);
+    setLeagueTeamsB([]);
     setTeamB(null);
     setMatches([]);
   }, []);
+
+  // Resolved team lists: league selected → league teams, else → allTeams
+  const teamsA = leagueA ? leagueTeamsA : allTeams;
+  const teamsALoading = leagueA ? leagueTeamsALoading : allTeamsLoading;
+  const teamsB = leagueB ? leagueTeamsB : allTeams;
+  const teamsBLoading = leagueB ? leagueTeamsBLoading : allTeamsLoading;
 
   // Fetch H2H matches
   const fetchH2H = useCallback(async () => {
@@ -158,15 +173,8 @@ function HomeContent() {
       })
     : matches;
 
-  // Resolve team names from available data
-  const resolvedTeamAName =
-    teamsA.find((t) => t.id === teamA)?.name ||
-    teamsB.find((t) => t.id === teamA)?.name ||
-    teamAName;
-  const resolvedTeamBName =
-    teamsB.find((t) => t.id === teamB)?.name ||
-    teamsA.find((t) => t.id === teamB)?.name ||
-    teamBName;
+  const teamAName = teamsA.find((t) => t.id === teamA)?.name || allTeams.find((t) => t.id === teamA)?.name || "";
+  const teamBName = teamsB.find((t) => t.id === teamB)?.name || allTeams.find((t) => t.id === teamB)?.name || "";
 
   return (
     <main className="min-h-screen">
@@ -211,20 +219,15 @@ function HomeContent() {
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueA}
-                  onSelect={fetchTeamsA}
+                  onSelect={fetchLeagueTeamsA}
                   onClear={clearLeagueA}
                   loading={leaguesLoading}
                 />
                 <TeamSelector
                   teams={teamsA}
                   selectedTeam={teamA}
-                  onSelect={(id, team) => {
-                    setTeamA(id);
-                    setTeamAName(team.name);
-                    setMatches([]);
-                  }}
+                  onSelect={(id) => { setTeamA(id); setMatches([]); }}
                   loading={teamsALoading}
-                  hasLeague={!!leagueA}
                 />
               </div>
 
@@ -236,20 +239,15 @@ function HomeContent() {
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueB}
-                  onSelect={fetchTeamsB}
+                  onSelect={fetchLeagueTeamsB}
                   onClear={clearLeagueB}
                   loading={leaguesLoading}
                 />
                 <TeamSelector
                   teams={teamsB}
                   selectedTeam={teamB}
-                  onSelect={(id, team) => {
-                    setTeamB(id);
-                    setTeamBName(team.name);
-                    setMatches([]);
-                  }}
+                  onSelect={(id) => { setTeamB(id); setMatches([]); }}
                   loading={teamsBLoading}
-                  hasLeague={!!leagueB}
                 />
               </div>
             </div>
@@ -296,20 +294,15 @@ function HomeContent() {
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueA}
-                  onSelect={fetchTeamsA}
+                  onSelect={fetchLeagueTeamsA}
                   onClear={clearLeagueA}
                   loading={leaguesLoading}
                 />
                 <TeamSelector
                   teams={teamsA}
                   selectedTeam={teamA}
-                  onSelect={(id, team) => {
-                    setTeamA(id);
-                    setTeamAName(team.name);
-                    setMatches([]);
-                  }}
+                  onSelect={(id) => { setTeamA(id); setMatches([]); }}
                   loading={teamsALoading}
-                  hasLeague={!!leagueA}
                 />
               </div>
             </div>
@@ -383,8 +376,8 @@ function HomeContent() {
           mode={mode}
           team1Id={teamA || 0}
           team2Id={teamB || 0}
-          team1Name={resolvedTeamAName}
-          team2Name={mode === "single" ? "" : resolvedTeamBName}
+          team1Name={teamAName}
+          team2Name={mode === "single" ? "" : teamBName}
         />
 
         {/* Empty state */}

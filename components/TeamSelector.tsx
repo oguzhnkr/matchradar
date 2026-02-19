@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Team } from "@/types";
 import Image from "next/image";
 import { useLang } from "@/lib/i18n";
@@ -8,10 +8,8 @@ import { useLang } from "@/lib/i18n";
 interface TeamSelectorProps {
   teams: Team[];
   selectedTeam: number | null;
-  onSelect: (teamId: number, team: Team) => void;
+  onSelect: (teamId: number) => void;
   loading?: boolean;
-  disabled?: boolean;
-  hasLeague?: boolean;
 }
 
 export default function TeamSelector({
@@ -19,18 +17,11 @@ export default function TeamSelector({
   selectedTeam,
   onSelect,
   loading,
-  disabled,
-  hasLeague,
 }: TeamSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<Team[]>([]);
-  const [searching, setSearching] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  // Track selected team locally for display when no league is set
-  const [selectedTeamObj, setSelectedTeamObj] = useState<Team | null>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -50,47 +41,11 @@ export default function TeamSelector({
     }
   }, [open]);
 
-  // Debounced search when no league is selected
-  const doSearch = useCallback((q: string) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.length < 3) {
-      setSearchResults([]);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/teams/search?q=${encodeURIComponent(q)}`);
-        const json = await res.json();
-        setSearchResults(json.data ?? []);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 400);
-  }, []);
-
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    if (!hasLeague) {
-      doSearch(value);
-    }
-  };
-
   const { t } = useLang();
-  const selected = teams.find((tm) => tm.id === selectedTeam) || selectedTeamObj;
-
-  // When in league mode, filter local teams
-  const filteredLocal = teams.filter((tm) =>
+  const selected = teams.find((tm) => tm.id === selectedTeam);
+  const filtered = teams.filter((tm) =>
     tm.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  // Which list to show
-  const isSearchMode = !hasLeague;
-  const displayList = isSearchMode ? searchResults : filteredLocal;
-  const showMinCharsHint = isSearchMode && search.length > 0 && search.length < 3;
 
   if (loading) {
     return (
@@ -109,13 +64,12 @@ export default function TeamSelector({
         <button
           type="button"
           onClick={() => {
-            if (!disabled) {
+            if (teams.length > 0) {
               setOpen(!open);
               setSearch("");
-              if (!hasLeague) setSearchResults([]);
             }
           }}
-          disabled={disabled}
+          disabled={teams.length === 0}
           className="w-full flex items-center gap-2 bg-surface-light border border-surface-lighter rounded-lg px-4 py-2.5 pr-10 text-sm text-left focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {selected ? (
@@ -126,9 +80,7 @@ export default function TeamSelector({
               <span className="text-white">{selected.name}</span>
             </div>
           ) : (
-            <span className="text-gray-500">
-              {isSearchMode ? t.searchTeamByName : t.selectTeamPlaceholder}
-            </span>
+            <span className="text-gray-500">{t.selectTeamPlaceholder}</span>
           )}
         </button>
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -151,37 +103,24 @@ export default function TeamSelector({
                 ref={inputRef}
                 type="text"
                 value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder={isSearchMode ? t.searchTeamByName : t.searchTeam}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t.searchTeam}
                 className="w-full bg-surface border border-surface-lighter rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
             {/* List */}
             <ul className="max-h-56 overflow-y-auto">
-              {showMinCharsHint ? (
-                <li className="px-4 py-3 text-sm text-gray-500 text-center">
-                  {t.minThreeChars}
-                </li>
-              ) : searching ? (
-                <li className="px-4 py-3 text-sm text-gray-500 text-center">
-                  {t.searching}
-                </li>
-              ) : isSearchMode && search.length === 0 ? (
-                <li className="px-4 py-3 text-sm text-gray-500 text-center">
-                  {t.typeToSearch}
-                </li>
-              ) : displayList.length === 0 ? (
+              {filtered.length === 0 ? (
                 <li className="px-4 py-3 text-sm text-gray-500 text-center">
                   {t.teamNotFound}
                 </li>
               ) : (
-                displayList.map((team) => (
+                filtered.map((team) => (
                   <li key={team.id}>
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedTeamObj(team);
-                        onSelect(team.id, team);
+                        onSelect(team.id);
                         setOpen(false);
                         setSearch("");
                       }}

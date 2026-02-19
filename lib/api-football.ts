@@ -4,6 +4,7 @@ const API_BASE = `https://${API_HOST}`;
 // API-Football league IDs
 const SUPPORTED_LEAGUES = [
   { id: 203, name: "Süper Lig" },
+  { id: 204, name: "TFF 1. Lig" },
   { id: 39, name: "Premier League" },
   { id: 140, name: "La Liga" },
   { id: 135, name: "Serie A" },
@@ -70,18 +71,26 @@ export async function getTeams(leagueId: number, season: number) {
     .sort((a: any, b: any) => a.name.localeCompare(b.name));
 }
 
-export async function searchTeams(query: string) {
-  const data = await apiFetch("/teams", {
-    search: query,
-  });
+export async function getAllTeams(season: number) {
+  const results = await Promise.allSettled(
+    SUPPORTED_LEAGUES.map((l) => getTeams(l.id, season))
+  );
 
-  return data.response
-    .map((item: any) => ({
-      id: item.team.id,
-      name: item.team.name,
-      logo: item.team.logo,
-    }))
-    .sort((a: any, b: any) => a.name.localeCompare(b.name));
+  const all: { id: number; name: string; logo: string }[] = [];
+  const seen = new Set<number>();
+
+  for (const r of results) {
+    if (r.status === "fulfilled") {
+      for (const team of r.value) {
+        if (!seen.has(team.id)) {
+          seen.add(team.id);
+          all.push(team);
+        }
+      }
+    }
+  }
+
+  return all.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getTeamMatches(teamId: number) {
