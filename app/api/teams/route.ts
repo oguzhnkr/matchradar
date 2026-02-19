@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getTeams } from "@/lib/api-football";
 import { DEMO_TEAMS } from "@/lib/demo-data";
