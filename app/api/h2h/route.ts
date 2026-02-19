@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 import { NextRequest, NextResponse } from "next/server";
 import { getHeadToHead } from "@/lib/api-football";
 import { generateDemoH2H } from "@/lib/demo-data";
@@ -16,7 +14,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (process.env.DEMO_MODE === "true" || !process.env.RAPIDAPI_KEY) {
+  if (process.env.DEMO_MODE === "true" || !process.env.API_FOOTBALL_KEY) {
     const matches = generateDemoH2H(Number(team1), Number(team2));
     return NextResponse.json(matches);
   }

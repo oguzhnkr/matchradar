@@ -1,4 +1,4 @@
-const API_BASE = "https://api-football-v1.p.rapidapi.com/v3";
+const API_BASE = "https://v3.football.api-sports.io";
 
 // API-Football league IDs
 const SUPPORTED_LEAGUES = [
@@ -13,9 +13,9 @@ const SUPPORTED_LEAGUES = [
 ];
 
 async function apiFetch(endpoint: string, params: Record<string, string> = {}) {
-  const apiKey = process.env.RAPIDAPI_KEY;
+  const apiKey = process.env.API_FOOTBALL_KEY;
   if (!apiKey) {
-    throw new Error("RAPIDAPI_KEY is not configured");
+    throw new Error("API_FOOTBALL_KEY is not configured");
   }
 
   const url = new URL(`${API_BASE}${endpoint}`);
@@ -23,8 +23,7 @@ async function apiFetch(endpoint: string, params: Record<string, string> = {}) {
 
   const res = await fetch(url.toString(), {
     headers: {
-      "x-rapidapi-key": apiKey,
-      "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+      "x-apisports-key": apiKey,
     },
   });
 
@@ -116,7 +115,7 @@ export async function getTeamMatches(teamId: number) {
 }
 
 export async function getHeadToHead(team1Id: number, team2Id: number) {
-  const data = await apiFetch("/fixtures/headtoheads", {
+  const data = await apiFetch("/fixtures/headtohead", {
     h2h: `${team1Id}-${team2Id}`,
     last: "10",
   });

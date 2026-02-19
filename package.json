@@ -9,7 +9,9 @@
     "lint": "next lint",
     "cf:build": "npx opennextjs-cloudflare build",
     "cf:deploy": "npx wrangler deploy",
-    "cf:preview": "npx wrangler dev"
+    "cf:preview": "npx wrangler dev",
+    "db:migrate:local": "npx wrangler d1 migrations apply matchradar-db --local",
+    "db:migrate:remote": "npx wrangler d1 migrations apply matchradar-db --remote"
   },
   "dependencies": {
     "next": "^15.1.0",

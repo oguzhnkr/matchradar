@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamMatches } from "@/lib/api-football";
 import { generateDemoTeamMatches } from "@/lib/demo-data";
@@ -15,7 +13,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (process.env.DEMO_MODE === "true" || !process.env.RAPIDAPI_KEY) {
+  if (process.env.DEMO_MODE === "true" || !process.env.API_FOOTBALL_KEY) {
     const matches = generateDemoTeamMatches(Number(team));
     return NextResponse.json(matches);
   }

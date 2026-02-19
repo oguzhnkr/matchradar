@@ -7,5 +7,15 @@
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
-	}
+	},
+	"vars": {
+		"DEMO_MODE": "false"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "matchradar-db",
+			"database_id": "b7ed262c-1ee3-4969-990b-2268a10e75a6"
+		}
+	]
 }
