@@ -1,6 +1,3 @@
-const API_HOST = process.env.API_FOOTBALL_HOST || "v3.football.api-sports.io";
-const API_BASE = `https://${API_HOST}`;
-
 // API-Football league IDs
 const SUPPORTED_LEAGUES = [
   { id: 203, name: "Süper Lig" },
@@ -14,32 +11,33 @@ const SUPPORTED_LEAGUES = [
   { id: 94, name: "Primeira Liga" },
 ];
 
-async function apiFetch(endpoint: string, params: Record<string, string> = {}) {
-  const apiKey = process.env.API_FOOTBALL_KEY;
-  if (!apiKey) {
-    throw new Error("API_FOOTBALL_KEY is not configured");
-  }
-
-  const url = new URL(`${API_BASE}${endpoint}`);
+async function apiFetch(
+  endpoint: string,
+  params: Record<string, string>,
+  apiKey: string,
+  apiHost: string
+) {
+  const apiBase = `https://${apiHost || "v3.football.api-sports.io"}`;
+  const url = new URL(`${apiBase}${endpoint}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
 
   const res = await fetch(url.toString(), {
     headers: {
       "x-apisports-key": apiKey,
     },
-    cache: "no-store",
   });
 
   if (res.status === 429) {
     throw new Error("Rate limit exceeded. Please wait and try again.");
   }
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error: ${res.status} - ${body}`);
+  const text = await res.text();
+
+  if (!res.ok || !text) {
+    throw new Error(`API error: ${res.status} - ${text || "empty response"}`);
   }
 
-  const data = await res.json();
+  const data = JSON.parse(text);
   if (data.errors && Object.keys(data.errors).length > 0) {
     throw new Error(`API error: ${JSON.stringify(data.errors)}`);
   }
@@ -56,11 +54,18 @@ export async function getLeagues() {
   }));
 }
 
-export async function getTeams(leagueId: number, season: number) {
-  const data = await apiFetch("/teams", {
-    league: String(leagueId),
-    season: String(season),
-  });
+export async function getTeams(
+  leagueId: number,
+  season: number,
+  apiKey: string,
+  apiHost: string
+) {
+  const data = await apiFetch(
+    "/teams",
+    { league: String(leagueId), season: String(season) },
+    apiKey,
+    apiHost
+  );
 
   return data.response
     .map((item: any) => ({
@@ -71,9 +76,13 @@ export async function getTeams(leagueId: number, season: number) {
     .sort((a: any, b: any) => a.name.localeCompare(b.name));
 }
 
-export async function getAllTeams(season: number) {
+export async function getAllTeams(
+  season: number,
+  apiKey: string,
+  apiHost: string
+) {
   const results = await Promise.allSettled(
-    SUPPORTED_LEAGUES.map((l) => getTeams(l.id, season))
+    SUPPORTED_LEAGUES.map((l) => getTeams(l.id, season, apiKey, apiHost))
   );
 
   const all: { id: number; name: string; logo: string }[] = [];
@@ -93,11 +102,17 @@ export async function getAllTeams(season: number) {
   return all.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function getTeamMatches(teamId: number) {
-  const data = await apiFetch("/fixtures", {
-    team: String(teamId),
-    last: "10",
-  });
+export async function getTeamMatches(
+  teamId: number,
+  apiKey: string,
+  apiHost: string
+) {
+  const data = await apiFetch(
+    "/fixtures",
+    { team: String(teamId), last: "10" },
+    apiKey,
+    apiHost
+  );
 
   return (data.response || []).map((item: any) => ({
     id: item.fixture.id,
@@ -138,11 +153,18 @@ export async function getTeamMatches(teamId: number) {
   }));
 }
 
-export async function getHeadToHead(team1Id: number, team2Id: number) {
-  const data = await apiFetch("/fixtures/headtohead", {
-    h2h: `${team1Id}-${team2Id}`,
-    last: "10",
-  });
+export async function getHeadToHead(
+  team1Id: number,
+  team2Id: number,
+  apiKey: string,
+  apiHost: string
+) {
+  const data = await apiFetch(
+    "/fixtures/headtohead",
+    { h2h: `${team1Id}-${team2Id}`, last: "10" },
+    apiKey,
+    apiHost
+  );
 
   return (data.response || []).map((item: any) => ({
     id: item.fixture.id,

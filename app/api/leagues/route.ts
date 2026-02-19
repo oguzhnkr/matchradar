@@ -1,14 +1,18 @@
-import { NextResponse } from "next/server";
+export const runtime = "edge";
+
 import { getLeagues } from "@/lib/api-football";
 import { DEMO_LEAGUES } from "@/lib/demo-data";
 
-export const runtime = "edge";
-
 const NO_CACHE = { "Cache-Control": "no-store, no-cache, must-revalidate" };
 
-export async function GET() {
-  if (!process.env.API_FOOTBALL_KEY) {
-    return NextResponse.json(
+export async function GET(
+  request: Request,
+  { env }: { env: any }
+) {
+  const API_KEY = env.API_FOOTBALL_KEY;
+
+  if (!API_KEY) {
+    return Response.json(
       { source: "dummy", data: DEMO_LEAGUES },
       { headers: NO_CACHE }
     );
@@ -16,14 +20,14 @@ export async function GET() {
 
   try {
     const leagues = await getLeagues();
-    return NextResponse.json(
+    return Response.json(
       { source: "api", data: leagues },
       { headers: NO_CACHE }
     );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to fetch leagues";
-    return NextResponse.json(
+    return Response.json(
       { source: "dummy", data: DEMO_LEAGUES, error: message },
       { headers: NO_CACHE }
     );
