@@ -8,7 +8,5 @@
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
 	},
-	"vars": {
-		"DEMO_MODE": "false"
-	}
+	"vars": {}
 }

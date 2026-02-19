@@ -44,9 +44,9 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/leagues")
       .then((res) => res.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error);
-        setLeagues(data);
+      .then((json) => {
+        if (json.error && !json.data) throw new Error(json.error);
+        setLeagues(json.data ?? json);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLeaguesLoading(false));
@@ -60,9 +60,9 @@ export default function Home() {
     setMatches([]);
     try {
       const res = await fetch(`/api/teams?league=${leagueId}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setTeamsA(data);
+      const json = await res.json();
+      if (json.error && !json.data) throw new Error(json.error);
+      setTeamsA(json.data ?? json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch teams");
     } finally {
@@ -78,9 +78,9 @@ export default function Home() {
     setMatches([]);
     try {
       const res = await fetch(`/api/teams?league=${leagueId}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setTeamsB(data);
+      const json = await res.json();
+      if (json.error && !json.data) throw new Error(json.error);
+      setTeamsB(json.data ?? json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch teams");
     } finally {
@@ -95,9 +95,9 @@ export default function Home() {
     setError(null);
     try {
       const res = await fetch(`/api/h2h?team1=${teamA}&team2=${teamB}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setMatches(data);
+      const json = await res.json();
+      if (json.error && !json.data) throw new Error(json.error);
+      setMatches(json.data ?? json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch matches");
     } finally {
@@ -112,9 +112,9 @@ export default function Home() {
     setError(null);
     try {
       const res = await fetch(`/api/matches?team=${teamA}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setMatches(data);
+      const json = await res.json();
+      if (json.error && !json.data) throw new Error(json.error);
+      setMatches(json.data ?? json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch matches");
     } finally {

@@ -1,4 +1,5 @@
-const API_BASE = "https://v3.football.api-sports.io";
+const API_HOST = process.env.API_FOOTBALL_HOST || "v3.football.api-sports.io";
+const API_BASE = `https://${API_HOST}`;
 
 // API-Football league IDs
 const SUPPORTED_LEAGUES = [
@@ -25,10 +26,11 @@ async function apiFetch(endpoint: string, params: Record<string, string> = {}) {
     headers: {
       "x-apisports-key": apiKey,
     },
+    cache: "no-store",
   });
 
   if (res.status === 429) {
-    throw new Error("İstek limiti aşıldı. Lütfen 1 dakika bekleyip tekrar deneyin.");
+    throw new Error("Rate limit exceeded. Please wait and try again.");
   }
 
   if (!res.ok) {
@@ -44,7 +46,6 @@ async function apiFetch(endpoint: string, params: Record<string, string> = {}) {
 }
 
 export async function getLeagues() {
-  // Return static list to save API calls
   return SUPPORTED_LEAGUES.map((l) => ({
     id: l.id,
     name: l.name,
