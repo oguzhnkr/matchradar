@@ -1,6 +1,5 @@
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { League, Team, Match } from "@/types";
 import Header from "@/components/Header";
 import LeagueSelector from "@/components/LeagueSelector";
@@ -11,158 +10,107 @@ import { useLang, LangProvider } from "@/lib/i18n";
 type Mode = "h2h" | "single";
 type VenueFilter = "all" | "home" | "away";
 
+// API fetcher that detects API_KEY_MISSING
+class ApiKeyMissingError extends Error {
+  constructor() {
+    super("API_KEY_MISSING");
+    this.name = "ApiKeyMissingError";
+  }
+}
+
+async function apiFetcher<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  const json = await res.json();
+  if (json.code === "API_KEY_MISSING") {
+    throw new ApiKeyMissingError();
+  }
+  if (json.error && !json.data) {
+    throw new Error(json.error);
+  }
+  return json.data ?? json;
+}
+
 function HomeContent() {
   const { t } = useLang();
   const [mode, setMode] = useState<Mode>("h2h");
   const [venueFilter, setVenueFilter] = useState<VenueFilter>("all");
 
-  // Leagues
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [leaguesLoading, setLeaguesLoading] = useState(true);
-
-  // All teams (loaded once on mount)
-  const [allTeams, setAllTeams] = useState<Team[]>([]);
-  const [allTeamsLoading, setAllTeamsLoading] = useState(true);
-
   // Team A
   const [leagueA, setLeagueA] = useState<number | null>(null);
-  const [leagueTeamsA, setLeagueTeamsA] = useState<Team[]>([]);
-  const [leagueTeamsALoading, setLeagueTeamsALoading] = useState(false);
   const [teamA, setTeamA] = useState<number | null>(null);
 
   // Team B
   const [leagueB, setLeagueB] = useState<number | null>(null);
-  const [leagueTeamsB, setLeagueTeamsB] = useState<Team[]>([]);
-  const [leagueTeamsBLoading, setLeagueTeamsBLoading] = useState(false);
   const [teamB, setTeamB] = useState<number | null>(null);
 
-  // Matches
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [matchesLoading, setMatchesLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // H2H / Single fetch triggers
+  const [h2hEnabled, setH2hEnabled] = useState(false);
+  const [singleEnabled, setSingleEnabled] = useState(false);
 
-  // Clear matches on mode switch
-  const switchMode = (newMode: Mode) => {
-    setMode(newMode);
-    setMatches([]);
-    setError(null);
-    setVenueFilter("all");
-  };
+  // --- Queries ---
 
-  // Fetch leagues + all teams on mount
-  useEffect(() => {
-    fetch("/api/leagues")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.error && !json.data) throw new Error(json.error);
-        setLeagues(json.data ?? json);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLeaguesLoading(false));
+  // Leagues
+  const leaguesQuery = useQuery<League[]>({
+    queryKey: ["leagues"],
+    queryFn: () => apiFetcher<League[]>("/api/leagues"),
+  });
 
-    fetch("/api/teams")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.error && !json.data) throw new Error(json.error);
-        setAllTeams(json.data ?? json);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setAllTeamsLoading(false));
-  }, []);
+  // All teams (loaded once)
+  const allTeamsQuery = useQuery<Team[]>({
+    queryKey: ["allTeams"],
+    queryFn: () => apiFetcher<Team[]>("/api/teams"),
+  });
 
-  // Fetch league-specific teams when league A changes
-  const fetchLeagueTeamsA = useCallback(async (leagueId: number) => {
-    setLeagueA(leagueId);
-    setTeamA(null);
-    setLeagueTeamsALoading(true);
-    setMatches([]);
-    try {
-      const res = await fetch(`/api/teams?league=${leagueId}`);
-      const json = await res.json();
-      if (json.error && !json.data) throw new Error(json.error);
-      setLeagueTeamsA(json.data ?? json);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch teams");
-    } finally {
-      setLeagueTeamsALoading(false);
-    }
-  }, []);
+  // League-specific teams A
+  const leagueTeamsAQuery = useQuery<Team[]>({
+    queryKey: ["leagueTeams", leagueA],
+    queryFn: () => apiFetcher<Team[]>(`/api/teams?league=${leagueA}`),
+    enabled: leagueA !== null,
+  });
 
-  // Fetch league-specific teams when league B changes
-  const fetchLeagueTeamsB = useCallback(async (leagueId: number) => {
-    setLeagueB(leagueId);
-    setTeamB(null);
-    setLeagueTeamsBLoading(true);
-    setMatches([]);
-    try {
-      const res = await fetch(`/api/teams?league=${leagueId}`);
-      const json = await res.json();
-      if (json.error && !json.data) throw new Error(json.error);
-      setLeagueTeamsB(json.data ?? json);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch teams");
-    } finally {
-      setLeagueTeamsBLoading(false);
-    }
-  }, []);
+  // League-specific teams B
+  const leagueTeamsBQuery = useQuery<Team[]>({
+    queryKey: ["leagueTeams", leagueB],
+    queryFn: () => apiFetcher<Team[]>(`/api/teams?league=${leagueB}`),
+    enabled: leagueB !== null,
+  });
 
-  // Clear league → revert to allTeams
-  const clearLeagueA = useCallback(() => {
-    setLeagueA(null);
-    setLeagueTeamsA([]);
-    setTeamA(null);
-    setMatches([]);
-  }, []);
+  // H2H matches
+  const h2hQuery = useQuery<Match[]>({
+    queryKey: ["h2h", teamA, teamB],
+    queryFn: () => apiFetcher<Match[]>(`/api/h2h?team1=${teamA}&team2=${teamB}`),
+    enabled: h2hEnabled && teamA !== null && teamB !== null && teamA !== teamB,
+  });
 
-  const clearLeagueB = useCallback(() => {
-    setLeagueB(null);
-    setLeagueTeamsB([]);
-    setTeamB(null);
-    setMatches([]);
-  }, []);
+  // Single team matches
+  const singleQuery = useQuery<Match[]>({
+    queryKey: ["matches", teamA],
+    queryFn: () => apiFetcher<Match[]>(`/api/matches?team=${teamA}`),
+    enabled: singleEnabled && teamA !== null,
+  });
 
-  // Resolved team lists: league selected → league teams, else → allTeams
-  const teamsA = leagueA ? leagueTeamsA : allTeams;
-  const teamsALoading = leagueA ? leagueTeamsALoading : allTeamsLoading;
-  const teamsB = leagueB ? leagueTeamsB : allTeams;
-  const teamsBLoading = leagueB ? leagueTeamsBLoading : allTeamsLoading;
+  // --- Derived state ---
 
-  // Fetch H2H matches
-  const fetchH2H = useCallback(async () => {
-    if (!teamA || !teamB) return;
-    setMatchesLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/h2h?team1=${teamA}&team2=${teamB}`);
-      const json = await res.json();
-      if (json.error && !json.data) throw new Error(json.error);
-      setMatches(json.data ?? json);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch matches");
-    } finally {
-      setMatchesLoading(false);
-    }
-  }, [teamA, teamB]);
+  const leagues = leaguesQuery.data ?? [];
+  const allTeams = allTeamsQuery.data ?? [];
 
-  // Fetch single team matches
-  const fetchSingleMatches = useCallback(async () => {
-    if (!teamA) return;
-    setMatchesLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/matches?team=${teamA}`);
-      const json = await res.json();
-      if (json.error && !json.data) throw new Error(json.error);
-      setMatches(json.data ?? json);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch matches");
-    } finally {
-      setMatchesLoading(false);
-    }
-  }, [teamA]);
+  const teamsA = leagueA ? (leagueTeamsAQuery.data ?? []) : allTeams;
+  const teamsALoading = leagueA ? leagueTeamsAQuery.isLoading : allTeamsQuery.isLoading;
+  const teamsB = leagueB ? (leagueTeamsBQuery.data ?? []) : allTeams;
+  const teamsBLoading = leagueB ? leagueTeamsBQuery.isLoading : allTeamsQuery.isLoading;
 
-  const canCompare = teamA !== null && teamB !== null && teamA !== teamB;
-  const canFetchSingle = teamA !== null;
+  const matchesQuery = mode === "h2h" ? h2hQuery : singleQuery;
+  const matches = matchesQuery.data ?? [];
+  const matchesLoading = matchesQuery.isFetching;
+
+  // Check if any query has API_KEY_MISSING error
+  const isApiKeyMissing = [leaguesQuery, allTeamsQuery, leagueTeamsAQuery, leagueTeamsBQuery, h2hQuery, singleQuery]
+    .some((q) => q.error instanceof ApiKeyMissingError);
+
+  // Get first non-API-key error
+  const errorQuery = [leaguesQuery, allTeamsQuery, leagueTeamsAQuery, leagueTeamsBQuery, matchesQuery]
+    .find((q) => q.error && !(q.error instanceof ApiKeyMissingError));
+  const error = errorQuery?.error instanceof Error ? errorQuery.error.message : null;
 
   // Filter matches by venue for single team mode
   const filteredMatches = mode === "single" && teamA
@@ -175,6 +123,65 @@ function HomeContent() {
 
   const teamAName = teamsA.find((t) => t.id === teamA)?.name || allTeams.find((t) => t.id === teamA)?.name || "";
   const teamBName = teamsB.find((t) => t.id === teamB)?.name || allTeams.find((t) => t.id === teamB)?.name || "";
+
+  const canCompare = teamA !== null && teamB !== null && teamA !== teamB;
+  const canFetchSingle = teamA !== null;
+
+  // --- Handlers ---
+
+  const switchMode = (newMode: Mode) => {
+    setMode(newMode);
+    setH2hEnabled(false);
+    setSingleEnabled(false);
+    setVenueFilter("all");
+  };
+
+  const handleLeagueASelect = (leagueId: number) => {
+    setLeagueA(leagueId);
+    setTeamA(null);
+    setH2hEnabled(false);
+    setSingleEnabled(false);
+  };
+
+  const handleLeagueBSelect = (leagueId: number) => {
+    setLeagueB(leagueId);
+    setTeamB(null);
+    setH2hEnabled(false);
+  };
+
+  const clearLeagueA = () => {
+    setLeagueA(null);
+    setTeamA(null);
+    setH2hEnabled(false);
+    setSingleEnabled(false);
+  };
+
+  const clearLeagueB = () => {
+    setLeagueB(null);
+    setTeamB(null);
+    setH2hEnabled(false);
+  };
+
+  const handleTeamASelect = (id: number) => {
+    setTeamA(id);
+    setH2hEnabled(false);
+    setSingleEnabled(false);
+  };
+
+  const handleTeamBSelect = (id: number) => {
+    setTeamB(id);
+    setH2hEnabled(false);
+  };
+
+  const fetchH2H = () => {
+    if (!canCompare) return;
+    setH2hEnabled(true);
+  };
+
+  const fetchSingleMatches = () => {
+    if (!canFetchSingle) return;
+    setSingleEnabled(true);
+  };
 
   return (
     <main className="min-h-screen">
@@ -219,14 +226,14 @@ function HomeContent() {
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueA}
-                  onSelect={fetchLeagueTeamsA}
+                  onSelect={handleLeagueASelect}
                   onClear={clearLeagueA}
-                  loading={leaguesLoading}
+                  loading={leaguesQuery.isLoading}
                 />
                 <TeamSelector
                   teams={teamsA}
                   selectedTeam={teamA}
-                  onSelect={(id) => { setTeamA(id); setMatches([]); }}
+                  onSelect={handleTeamASelect}
                   loading={teamsALoading}
                 />
               </div>
@@ -239,14 +246,14 @@ function HomeContent() {
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueB}
-                  onSelect={fetchLeagueTeamsB}
+                  onSelect={handleLeagueBSelect}
                   onClear={clearLeagueB}
-                  loading={leaguesLoading}
+                  loading={leaguesQuery.isLoading}
                 />
                 <TeamSelector
                   teams={teamsB}
                   selectedTeam={teamB}
-                  onSelect={(id) => { setTeamB(id); setMatches([]); }}
+                  onSelect={handleTeamBSelect}
                   loading={teamsBLoading}
                 />
               </div>
@@ -294,21 +301,21 @@ function HomeContent() {
                 <LeagueSelector
                   leagues={leagues}
                   selectedLeague={leagueA}
-                  onSelect={fetchLeagueTeamsA}
+                  onSelect={handleLeagueASelect}
                   onClear={clearLeagueA}
-                  loading={leaguesLoading}
+                  loading={leaguesQuery.isLoading}
                 />
                 <TeamSelector
                   teams={teamsA}
                   selectedTeam={teamA}
-                  onSelect={(id) => { setTeamA(id); setMatches([]); }}
+                  onSelect={handleTeamASelect}
                   loading={teamsALoading}
                 />
               </div>
             </div>
 
             {/* Venue Filter */}
-            {matches.length > 0 && (
+            {filteredMatches.length > 0 && (
               <div className="flex justify-center mt-3 sm:mt-4">
                 <div className="bg-surface border border-surface-lighter rounded-lg p-1 inline-flex">
                   {([["all", t.all], ["home", t.home], ["away", t.away]] as [VenueFilter, string][]).map(([value, label]) => (
@@ -356,16 +363,17 @@ function HomeContent() {
           </>
         )}
 
+        {/* API Key Missing Error */}
+        {isApiKeyMissing && (
+          <div className="mt-6 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
+            <p className="text-yellow-400 text-sm">{t.apiKeyMissing}</p>
+          </div>
+        )}
+
         {/* Error */}
-        {error && (
+        {error && !isApiKeyMissing && (
           <div className="mt-6 bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-center">
             <p className="text-red-400 text-sm">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="mt-2 text-xs text-red-500 hover:text-red-300 underline"
-            >
-              {t.close}
-            </button>
           </div>
         )}
 
@@ -381,7 +389,7 @@ function HomeContent() {
         />
 
         {/* Empty state */}
-        {!matchesLoading && filteredMatches.length === 0 && !error && (
+        {!matchesLoading && filteredMatches.length === 0 && !error && !isApiKeyMissing && (
           <div className="mt-12 text-center text-gray-600">
             <svg
               className="w-16 h-16 mx-auto mb-4 opacity-30"

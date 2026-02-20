@@ -1,5 +1,3 @@
-"use client";
-
 import { Match } from "@/types";
 import MatchCard from "./MatchCard";
 import { useLang } from "@/lib/i18n";

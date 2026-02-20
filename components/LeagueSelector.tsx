@@ -1,5 +1,3 @@
-"use client";
-
 import { League } from "@/types";
 import Image from "next/image";
 import { useLang } from "@/lib/i18n";

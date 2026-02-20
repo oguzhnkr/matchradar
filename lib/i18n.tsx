@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type Lang = "tr" | "en";
@@ -35,6 +33,7 @@ const translations = {
     all: "Tümü",
     home: "İç Saha",
     away: "Deplasman",
+    apiKeyMissing: "API anahtarı yapılandırılmamış. Lütfen API_FOOTBALL_KEY ortam değişkenini ayarlayın.",
   },
   en: {
     subtitle: "Football Comparison Platform",
@@ -66,6 +65,7 @@ const translations = {
     all: "All",
     home: "Home",
     away: "Away",
+    apiKeyMissing: "API key is not configured. Please set the API_FOOTBALL_KEY environment variable.",
   },
 } as const;
 

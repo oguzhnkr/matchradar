@@ -1,5 +1,3 @@
-"use client";
-
 import { useLang } from "@/lib/i18n";
 
 export default function Header() {
